@@ -1,0 +1,96 @@
+{
+	"info": {
+		"_postman_id": "7956f998-a5c6-4c54-8c39-d75c85e0ab74",
+		"name": "Question 4 - Celestrak Object Validation",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45323651",
+		"_collection_link": "https://www.postman.com/tetianagp-4159205/neuraspacetest/collection/uj1wjup/question-4-celestrak-object-validation?action=share&source=collection_link&creator=45323651"
+	},
+	"item": [
+		{
+			"name": "Validate Space Objects",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Assert status code 200",
+							"pm.test('API response was successful', function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"",
+							"const responseData = pm.response.json();",
+							"const now = new Date();",
+							"const objectIdPattern = /^\\d{4}-\\d{3}[A-Z]{1,3}$/;",
+							"",
+							"pm.test('Response should be an array', function () {",
+							"    pm.expect(Array.isArray(responseData)).to.be.true;",
+							"});",
+							"",
+							"responseData.forEach(function(obj) {",
+							"    pm.test(`EPOCH field for OBJECT_ID ${obj.OBJECT_ID} is valid and recent`, function () {",
+							"        pm.expect(obj.EPOCH).to.be.a('string').that.is.not.empty;",
+							"        const epochDate = new Date(obj.EPOCH);",
+							"        pm.expect(epochDate.toString()).to.not.equal('Invalid Date');",
+							"        const totalDays = (now - epochDate) / (1000 * 60 * 60 * 24);",
+							"        pm.expect(totalDays).to.be.at.most(30);",
+							"    });",
+							"",
+							"    pm.test(`OBJECT_ID ${obj.OBJECT_ID} matches COSPAR format`, function () {",
+							"        pm.expect(obj.OBJECT_ID).to.be.a('string').that.is.not.empty;",
+							"        pm.expect(obj.OBJECT_ID).to.match(objectIdPattern);",
+							"    });",
+							"",
+							"    pm.test(`NORAD_CAT_ID ${obj.NORAD_CAT_ID} is a 5-digit number`, function () {",
+							"        pm.expect(obj.NORAD_CAT_ID).to.be.a('number');",
+							"        pm.expect(obj.NORAD_CAT_ID).to.be.within(10000, 99999);",
+							"    });",
+							"});"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "https://celestrak.org/NORAD/elements/gp.php?GROUP=last-30-days&FORMAT=json",
+					"protocol": "https",
+					"host": [
+						"celestrak",
+						"org"
+					],
+					"path": [
+						"NORAD",
+						"elements",
+						"gp.php"
+					],
+					"query": [
+						{
+							"key": "GROUP",
+							"value": "last-30-days"
+						},
+						{
+							"key": "FORMAT",
+							"value": "json"
+						}
+					]
+				}
+			},
+			"response": []
+		}
+	]
+}

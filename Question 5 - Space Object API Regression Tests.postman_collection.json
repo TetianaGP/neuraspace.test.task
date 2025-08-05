@@ -1,0 +1,294 @@
+{
+	"info": {
+		"_postman_id": "f2ea8989-f76a-4948-bd8f-41289e099fd2",
+		"name": "Question 5 - Space Object API Regression Tests",
+		"description": "Postman collection to test the Space Object REST API endpoint, including create, read, validate, and delete operations.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "45323651",
+		"_collection_link": "https://www.postman.com/tetianagp-4159205/neuraspacetest/collection/4f5kr40/question-5-space-object-api-regression-tests?action=share&source=collection_link&creator=45323651"
+	},
+	"item": [
+		{
+			"name": "Get All Space Objects and Validate",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Check for a successful response (HTTP 200 OK)",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Parse the response body",
+							"var spaceObjects = pm.response.json();",
+							"",
+							"pm.test(\"Response is an array\", function () {",
+							"    pm.expect(spaceObjects).to.be.an('array');",
+							"});",
+							"",
+							"const dateTimeRegex = /^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{7}$/;",
+							"",
+							"if (spaceObjects && spaceObjects.length > 0) {",
+							"    spaceObjects.forEach(function(obj) {",
+							"        // Validation: Launch Date and Decay format (YYYY-MM-DD)",
+							"        pm.test(\"Launch Date is in YYYY-MM-DD format\", function() {",
+							"            pm.expect(obj.launchDate).to.match(dateTimeRegex);",
+							"        });",
+							"        pm.test(\"Decay Date is in YYYY-MM-DD format\", function() {",
+							"            pm.expect(obj.decay).to.match(dateTimeRegex);",
+							"        });",
+							"",
+							"        // Validation: Cospar ID format (launch year followed by 3 digits)",
+							"        pm.test(\"Cospar ID format is correct\", function() {",
+							"            var cosparRegex = /^\\d{4}-\\d{3}$/;",
+							"            pm.expect(obj.cosparId).to.match(cosparRegex);",
+							"        });",
+							"",
+							"        // Validation: Norad ID format (5 digits)",
+							"        pm.test(\"Norad ID format is correct\", function() {",
+							"            var noradRegex = /^\\d{5}$/;",
+							"            pm.expect(obj.noradId).to.match(noradRegex);",
+							"        });",
+							"",
+							"        // Validation: Positive numbers for specific fields",
+							"        pm.test(\"Period is a positive number\", function() {",
+							"            pm.expect(obj.period).to.be.above(0);",
+							"        });",
+							"        pm.test(\"Inclination is a positive number\", function() {",
+							"            pm.expect(obj.inclination).to.be.above(0);",
+							"        });",
+							"        pm.test(\"Apogee is a positive number\", function() {",
+							"            pm.expect(obj.apogee).to.be.above(0);",
+							"        });",
+							"        pm.test(\"Perigee is a positive number\", function() {",
+							"            pm.expect(obj.perigee).to.be.above(0);",
+							"        });",
+							"        pm.test(\"Dry mass is a positive number\", function() {",
+							"            pm.expect(obj.dryMass).to.be.above(0);",
+							"        });",
+							"        pm.test(\"Launch mass is a positive number\", function() {",
+							"            pm.expect(obj.launchMass).to.be.above(0);",
+							"        });",
+							"",
+							"        // Validation: Object Type",
+							"        pm.test(\"Object Type is one of the allowed values\", function() {",
+							"            pm.expect(obj.objectType).to.be.oneOf([\"RocketBody\", \"Payload\", \"Debris\"]);",
+							"        });",
+							"    });",
+							"} else {",
+							"    console.log(\"No space objects found in the response.\");",
+							"}"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				},
+				{
+					"listen": "prerequest",
+					"script": {
+						"exec": [
+							"// Generate a random number between 1 and 10 for pageIndex\r",
+							"const pageIndex = Math.floor(Math.random() * 10) + 1;\r",
+							"\r",
+							"// Generate a random number between 1 and 10 for pageSize\r",
+							"const pageSize = Math.floor(Math.random() * 10) + 1;\r",
+							"\r",
+							"// Set the generated values as environment variables\r",
+							"pm.environment.set(\"pageIndex\", pageIndex);\r",
+							"console.log(pageIndex, \" - \", pageSize);\r",
+							"pm.environment.set(\"pageSize\", pageSize);"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/space_objects?pageIndex={{pageIndex}}&pageSize={{pageSize}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"space_objects"
+					],
+					"query": [
+						{
+							"key": "pageIndex",
+							"value": "{{pageIndex}}"
+						},
+						{
+							"key": "pageSize",
+							"value": "{{pageSize}}"
+						}
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "1. Create New Space Object",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Check for successful creation (HTTP 201 Created)",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Parse the response body as a string, which is the internal ID",
+							"var internalId = pm.response.text().replace(/^\"|\"$/g, '');",
+							"",
+							"// Check if the response is a non-empty string",
+							"pm.test(\"Response is a valid ID string\", function () {",
+							"    pm.expect(internalId).to.be.a('string').and.to.have.lengthOf.at.least(1);",
+							"});",
+							"",
+							"// Store the new internalId in an environment variable for subsequent requests",
+							"pm.environment.set(\"spaceObjectId\", internalId);",
+							""
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json; charset=utf-8 "
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n  \"cosparId\": \"774-KJH9\",\n  \"noradId\": \"14777\",\n  \"name\": \"Block\",\n  \"objectType\": \"RocketBody\",\n  \"launchCountry\": \"Svalbard & Jan Mayen Islands\",\n  \"launchDate\": \"1993-01-06T13:33:58.9821382\",\n  \"launchSite\": \"Lake Lyda\",\n  \"decay\": \"1969-11-08T10:18:13.0803598\",\n  \"period\": 91,\n  \"inclination\": 247,\n  \"apogee\": 371889,\n  \"perigee\": 357984,\n  \"launchMass\": 388396,\n  \"dryMass\": 0\n}"
+				},
+				"url": {
+					"raw": "{{baseURL}}/space_objects",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"space_objects"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "2. Get Created Object by ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Check for a successful response (HTTP 200 OK)",
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});",
+							"",
+							"// Parse the response body",
+							"var jsonData = pm.response.json();",
+							"",
+							"// Check if the returned object's ID matches the one we saved",
+							"pm.test(\"Returned object ID matches saved ID\", function () {",
+							"    var savedId = pm.environment.get(\"spaceObjectId\");",
+							"    pm.expect(jsonData.id).to.eql(savedId);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/api/space-object/{{spaceObjectId}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"space-object",
+						"{{spaceObjectId}}"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "3. Delete Created Object by ID",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"// Check for a successful deletion (HTTP 204 No Content)",
+							"pm.test(\"Status code is 204\", function () {",
+							"    pm.response.to.have.status(204);",
+							"});",
+							"",
+							"// Clean up the environment variable after deletion",
+							"pm.environment.unset(\"spaceObjectId\");"
+						],
+						"type": "text/javascript",
+						"packages": {}
+					}
+				}
+			],
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "{{baseURL}}/api/space-object/{{spaceObjectId}}",
+					"host": [
+						"{{baseURL}}"
+					],
+					"path": [
+						"api",
+						"space-object",
+						"{{spaceObjectId}}"
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "baseURL",
+			"value": "https://neuraspacedummyrsoapiappservicelinux-hyayfbdrg3gea6fd.westeurope-01.azurewebsites.net",
+			"type": "default"
+		}
+	]
+}
